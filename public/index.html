@@ -898,7 +898,8 @@ async function apiPost(endpoint, url, user, pass, payload, extra = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, user, pass, payload, ...extra }),
   });
-  return resp.json();
+  const text = await resp.text();
+  try { return JSON.parse(text); } catch { return { ok: false, error: `HTTP ${resp.status}`, detail: text }; }
 }
 
 async function resolveUserForCS(srcUrl, srcUser, srcPass, tgtUrl, tgtUser, tgtPass, communicationUserID) {

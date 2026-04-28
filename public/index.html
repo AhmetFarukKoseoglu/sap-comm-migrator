@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAP Communication Objects Migrator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      background: #f0f2f5;
+      color: #32363a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0a6ed1;
+      color: #fff;
+      padding: 0 24px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    }
+    header h1 { font-size: 16px; font-weight: 700; letter-spacing: .3px; }
+
+    .container { max-width: 1140px; margin: 28px auto; padding: 0 16px; }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0a6ed1;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 18px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    .sys-panel { border: 1px solid #e8eaed; border-radius: 6px; padding: 18px; }
+    .sys-panel-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+    .field-group label { font-size: 12px; font-weight: 600; color: #6a6d70; }
+
+    input[type="text"], input[type="password"], input[type="url"] {
+      padding: 8px 11px;
+      border: 1px solid #c9cdd4;
+      border-radius: 4px;
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus { border-color: #0a6ed1; box-shadow: 0 0 0 2px rgba(10,110,209,.12); }
+    .hint { font-size: 11px; color: #8c9099; }
+
+    .conn-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-idle { background: #c9cdd4; }
+    .dot-ok   { background: #107e3e; }
+    .dot-err  { background: #bb0000; }
+    .conn-txt { font-size: 12px; color: #6a6d70; }
+
+    button {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity .15s, background .15s;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary   { background: #0a6ed1; color: #fff; }
+    .btn-primary:not(:disabled):hover   { background: #085caf; }
+    .btn-secondary { background: #fff; color: #0a6ed1; border: 1px solid #0a6ed1; }
+    .btn-secondary:not(:disabled):hover { background: #e8f1fb; }
+    .btn-success   { background: #107e3e; color: #fff; }
+    .btn-success:not(:disabled):hover   { background: #0d6634; }
+    .btn-danger    { background: #bb0000; color: #fff; }
+    .btn-danger:not(:disabled):hover    { background: #990000; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+
+    .tab-bar { display: flex; border-bottom: 2px solid #d9dbdd; margin-bottom: 14px; }
+    .tab {
+      padding: 9px 18px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6a6d70;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab.active { color: #0a6ed1; border-bottom-color: #0a6ed1; }
+    .tab:hover:not(.active) { color: #32363a; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .badge-blue { background: #e8f1fb; color: #0a6ed1; }
+
+    .select-all-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #6a6d70; margin-bottom: 8px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    td, th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    td:first-child, th:first-child { overflow: visible; white-space: normal; text-overflow: clip; }
+    thead th { background: #f7f9fb; padding: 9px 11px; text-align: left; font-weight: 700; color: #6a6d70; border-bottom: 2px solid #d9dbdd; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f0f2f5; }
+    tbody tr:hover { background: #f7f9fb; }
+    tbody td { padding: 8px 11px; vertical-align: middle; }
+    .empty-state { text-align: center; padding: 28px; color: #8c9099; font-size: 13px; }
+
+    .migrate-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .summary-item { background: #f7f9fb; border-radius: 6px; padding: 14px; text-align: center; }
+    .summary-item .num { font-size: 26px; font-weight: 700; }
+    .summary-item .lbl { font-size: 11px; color: #6a6d70; margin-top: 3px; }
+
+    .progress-wrap { background: #d9dbdd; border-radius: 4px; height: 8px; margin: 10px 0 16px; overflow: hidden; }
+    .progress-bar  { height: 100%; background: #0a6ed1; border-radius: 4px; transition: width .3s; width: 0%; }
+
+    #log-box {
+      background: #1d1d1d;
+      color: #d4d4d4;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      line-height: 1.75;
+    }
+    .log-ok   { color: #4ec9b0; }
+    .log-err  { color: #f44747; }
+    .log-info { color: #569cd6; }
+    .log-warn { color: #dcdcaa; }
+
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .check { cursor: pointer; width: 15px; height: 15px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+    .api-note { font-size: 11px; color: #8c9099; margin-top: 4px; font-style: italic; }
+
+    .info-btn {
+      width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #8c9099;
+      background: #f0f2f5; color: #6a6d70; font-size: 12px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      line-height: 1; padding: 0; margin-left: 8px; flex-shrink: 0;
+      transition: background .15s, color .15s;
+    }
+    .info-btn:hover { background: #6a6d70; color: #fff; }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 8px; padding: 28px 32px;
+      max-width: 540px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      position: relative;
+    }
+    .modal-box h3 { font-size: 14px; font-weight: 700; color: #32363a; margin-bottom: 14px; }
+    .modal-box p  { font-size: 13px; color: #32363a; line-height: 1.7; margin-bottom: 14px; }
+    .modal-box a  { color: #0a6ed1; text-decoration: none; }
+    .modal-box a:hover { text-decoration: underline; }
+    .modal-box ul { padding-left: 18px; margin-bottom: 6px; }
+    .modal-box ul li { font-size: 13px; color: #32363a; line-height: 2; }
+    .modal-close {
+      position: absolute; top: 12px; right: 14px;
+      background: none; border: none; font-size: 18px; cursor: pointer; color: #6a6d70;
+      padding: 0; line-height: 1;
+    }
+    .modal-close:hover { color: #32363a; }
+
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .migrate-summary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="36" height="28" viewBox="0 0 36 28"><rect width="36" height="28" rx="4" fill="#fff"/><text x="3" y="20" font-size="14" font-weight="bold" fill="#0a6ed1">SAP</text></svg>
+  <h1>SAP Public Cloud — Communication Objects Migrator</h1>
+</header>
+
+<div class="container">
+
+  <!-- INFO MODAL -->
+  <div class="modal-overlay" id="info-modal" onclick="if(event.target===this)closeInfoModal()">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeInfoModal()">&#x2715;</button>
+      <h3>Kullanım Bilgisi</h3>
+      <p>Bu program standart API'ler ile kopyalama yapmaktadır. Bu yüzden nesnelerin kopyalanabilmesi için kaynak ve hedef sistem içerisinde <strong>SAP_COM_0A48</strong> arrangement ve buna bağlı olarak communication user ve communication system oluşturulmalıdır.</p>
+      <p>Kullanılan API'lere aşağıdaki linklerden erişebilirsiniz:</p>
+      <ul>
+        <li><a href="https://api.sap.com/api/sap-s4-CE_APS_COM_CU_A4C_ODATA_0001-v1/overview" target="_blank">Communication User</a></li>
+        <li><a href="https://api.sap.com/api/sap-s4-CE_APS_COM_CS_A4C_ODATA_0001-v1/overview" target="_blank">Communication System</a></li>
+        <li><a href="https://api.sap.com/api/sap-s4-CE_APS_COM_CA_A4C_ODATA_0001-v1/overview" target="_blank">Communication Arrangement</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SİSTEM KONFİGÜRASYONU -->
+  <div class="card">
+    <div style="display:flex;align-items:center;margin-bottom:18px;">
+      <div class="card-title" style="margin:0;">Sistem Konfigürasyonu</div>
+      <button class="info-btn" onclick="openInfoModal()" title="Bilgi">i</button>
+    </div>
+    <div class="grid-2">
+
+
+      <div class="sys-panel">
+        <div class="sys-panel-title" style="color:#107e3e;">&#9654; Kaynak Sistem (Source)</div>
+        <div class="field-group">
+          <label>Base URL</label>
+          <input type="url" id="src-url" placeholder="https://myXXXXXX.s4hana.cloud.sap" />
+          <span class="hint">UI URL'yi girin — sunucu API URL'ye otomatik çevirir</span>
+          <span class="api-note" id="src-api-note"></span>
+        </div>
+        <div class="field-group">
+          <label>Communication User</label>
+          <input type="text" id="src-user" placeholder="CC0000000000" />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input type="password" id="src-pass" placeholder="••••••••" />
+        </div>
+        <div class="btn-row">
+          <button class="btn-secondary btn-sm" onclick="testConn('src')">Test Bağlantı</button>
+        </div>
+        <div class="conn-row">
+          <span class="dot dot-idle" id="src-dot"></span>
+          <span class="conn-txt" id="src-status">Bağlantı test edilmedi</span>
+        </div>
+      </div>
+
+      <div class="sys-panel">
+        <div class="sys-panel-title" style="color:#0a6ed1;">&#9654; Hedef Sistem (Target)</div>
+        <div class="field-group">
+          <label>Base URL</label>
+          <input type="url" id="tgt-url" placeholder="https://myYYYYYY.s4hana.cloud.sap" />
+          <span class="hint">UI URL'yi girin — sunucu API URL'ye otomatik çevirir</span>
+          <span class="api-note" id="tgt-api-note"></span>
+        </div>
+        <div class="field-group">
+          <label>Communication User</label>
+          <input type="text" id="tgt-user" placeholder="CC0000000000" />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input type="password" id="tgt-pass" placeholder="••••••••" />
+        </div>
+        <div class="btn-row">
+          <button class="btn-secondary btn-sm" onclick="testConn('tgt')">Test Bağlantı</button>
+        </div>
+        <div class="conn-row">
+          <span class="dot dot-idle" id="tgt-dot"></span>
+          <span class="conn-txt" id="tgt-status">Bağlantı test edilmedi</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VERİ SEÇİMİ -->
+  <div class="card">
+    <div class="section-header">
+      <div class="card-title" style="margin:0;">Kaynak Veri — Seçim</div>
+      <button class="btn-primary" id="btn-fetch" onclick="fetchAll()">
+        Kaynak Sistemden Verileri Çek
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+      <div class="tab-bar" style="margin-bottom:0;border-bottom:none;flex:1;">
+        <div class="tab active" onclick="switchTab('users',0)">
+          Communication Users <span class="badge badge-blue" id="cu-count">0</span>
+        </div>
+        <div class="tab" onclick="switchTab('systems',1)">
+          Communication Systems <span class="badge badge-blue" id="cs-count">0</span>
+        </div>
+        <div class="tab" onclick="switchTab('arrangements',2)">
+          Comm. Arrangements <span class="badge badge-blue" id="ca-count">0</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="text" id="search-box" placeholder="Ara..." oninput="applySearch()"
+          style="padding:6px 10px;font-size:13px;border:1px solid #c9cdd4;border-radius:4px;width:200px;outline:none;"/>
+        <button class="btn-secondary btn-sm" onclick="$('search-box').value='';applySearch()">✕</button>
+      </div>
+    </div>
+    <div style="border-bottom:2px solid #d9dbdd;margin-bottom:14px;"></div>
+
+    <div class="tab-content active" id="tab-users">
+      <div class="select-all-row">
+        <input type="checkbox" id="sel-all-cu" class="check" onchange="selectAll('cu',this.checked)" />
+        <label for="sel-all-cu">Tümünü Seç / Kaldır</label>
+      </div>
+      <table>
+        <thead><tr><th style="width:34px;"></th><th>User ID</th><th>Name</th><th>Description</th><th style="text-align:center;width:80px;">Durum</th></tr></thead>
+        <tbody id="tbody-cu"><tr><td colspan="5" class="empty-state">Henüz veri yüklenmedi.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-systems">
+      <div class="select-all-row">
+        <input type="checkbox" id="sel-all-cs" class="check" onchange="selectAll('cs',this.checked)" />
+        <label for="sel-all-cs">Tümünü Seç / Kaldır</label>
+      </div>
+      <table>
+        <thead><tr><th style="width:34px;"></th><th>System ID</th><th>Name</th><th>Host Name</th><th>TCP Port</th></tr></thead>
+        <tbody id="tbody-cs"><tr><td colspan="5" class="empty-state">Henüz veri yüklenmedi.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="tab-arrangements">
+      <div class="select-all-row">
+        <input type="checkbox" id="sel-all-ca" class="check" onchange="selectAll('ca',this.checked)" />
+        <label for="sel-all-ca">Tümünü Seç / Kaldır</label>
+      </div>
+      <table>
+        <thead><tr><th style="width:34px;"></th><th>Arrangement Name</th><th>Scenario ID</th><th>Comm. System ID</th></tr></thead>
+        <tbody id="tbody-ca"><tr><td colspan="4" class="empty-state">Henüz veri yüklenmedi.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MİGRASYON -->
+  <div class="card">
+    <div class="card-title">Migrasyon</div>
+
+    <div class="migrate-summary">
+      <div class="summary-item">
+        <div class="num" id="sum-selected" style="color:#0a6ed1;">0</div>
+        <div class="lbl">Seçili Nesne</div>
+      </div>
+      <div class="summary-item">
+        <div class="num" id="sum-ok" style="color:#107e3e;">0</div>
+        <div class="lbl">Başarılı</div>
+      </div>
+      <div class="summary-item">
+        <div class="num" id="sum-err" style="color:#bb0000;">0</div>
+        <div class="lbl">Hatalı</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-success" id="btn-migrate" onclick="startMigration()">
+        Seçilileri Hedef Sisteme Aktar
+      </button>
+      <button class="btn-danger" onclick="clearLog()">Log Temizle</button>
+    </div>
+
+    <div style="margin-top:16px;">
+      <p style="font-size:12px;font-weight:700;color:#6a6d70;margin-bottom:8px;">İşlem Logu</p>
+      <div id="log-box">
+        <span class="log-info">// Sistem hazır — Node.js proxy aktif (localhost:3000)</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer style="text-align:center;padding:18px 0 24px;font-size:11px;color:#8c9099;">
+  SAP Communication Migrator &nbsp;|&nbsp; Ahmet Faruk KÖSEOĞLU
+</footer>
+
+<script>
+/* ── STATE ── */
+const state = {
+  users: [], systems: [], arrangements: [],
+  selectedCU: new Set(), selectedCS: new Set(), selectedCA: new Set(),
+};
+
+/* ── UTILS ── */
+const $ = id => document.getElementById(id);
+
+function log(msg, type = 'info') {
+  const box = $('log-box');
+  const div = document.createElement('div');
+  div.className = `log-${type}`;
+  div.textContent = `[${new Date().toLocaleTimeString('tr-TR')}]  ${msg}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog() { $('log-box').innerHTML = '<span class="log-info">// Log temizlendi.</span>'; }
+function setProgress(pct) { $('progress-bar').style.width = pct + '%'; }
+function updateSummary() { $('sum-selected').textContent = state.selectedCU.size + state.selectedCS.size + state.selectedCA.size; }
+function esc(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function v(sys, f) { return $(sys + '-' + f).value.trim().replace(/\/$/, ''); }
+
+/* ── TAB ── */
+let activeTab = 'users';
+
+function switchTab(name, idx) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  $(`tab-${name}`).classList.add('active');
+  applySearch();
+}
+
+function applySearch() {
+  const q = ($('search-box').value || '').toLowerCase().trim();
+  if (activeTab === 'users') {
+    const filtered = q ? state.users.filter(u =>
+      (u.ID   || '').toLowerCase().includes(q) ||
+      (u.Name || '').toLowerCase().includes(q) ||
+      (u.Description || '').toLowerCase().includes(q)
+    ) : state.users;
+    renderUsersData(filtered);
+  } else if (activeTab === 'systems') {
+    const filtered = q ? state.systems.filter(s =>
+      (s.ID       || '').toLowerCase().includes(q) ||
+      (s.Name     || '').toLowerCase().includes(q) ||
+      (s.HostName || '').toLowerCase().includes(q)
+    ) : state.systems;
+    renderSystemsData(filtered);
+  } else if (activeTab === 'arrangements') {
+    const filtered = q ? state.arrangements.filter(a =>
+      (a.Name                  || '').toLowerCase().includes(q) ||
+      (a.CommunicationScenarioID || '').toLowerCase().includes(q) ||
+      (a.CommunicationSystemID   || '').toLowerCase().includes(q)
+    ) : state.arrangements;
+    renderArrangementsData(filtered);
+  }
+}
+
+/* ── TEST CONNECTION ── */
+async function testConn(sys) {
+  const url  = v(sys, 'url');
+  const user = v(sys, 'user');
+  const pass = $(sys + '-pass').value;
+  if (!url || !user || !pass) { alert('URL, kullanıcı ve şifre zorunludur.'); return; }
+
+  $(`${sys}-status`).textContent = 'Test ediliyor…';
+  $(`${sys}-dot`).className = 'dot dot-idle';
+  $(`${sys}-api-note`).textContent = '';
+
+  try {
+    const resp = await fetch('/api/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, user, pass }),
+    });
+    const json = await resp.json();
+
+    if (json.results) {
+      json.results.forEach(r => {
+        const short = r.testUrl.replace(/^https:\/\/[^/]+/, '');
+        log(`  [PROBE] ${r.status || 'ERR'} → ${short}`, r.ok ? 'ok' : r.status === 403 ? 'warn' : 'err');
+      });
+    }
+
+    if (json.ok) {
+      $(`${sys}-dot`).className = 'dot dot-ok';
+      $(`${sys}-status`).textContent = 'Bağlantı başarılı ✓';
+      $(`${sys}-api-note`).textContent = `API: ${json.apiBase}`;
+      log(`[${sys.toUpperCase()}] Bağlantı başarılı → ${json.apiBase}`, 'ok');
+    } else {
+      $(`${sys}-dot`).className = 'dot dot-err';
+      $(`${sys}-status`).textContent = `Hata: HTTP ${json.status || '?'}`;
+      log(`[${sys.toUpperCase()}] Başarısız: ${json.detail || json.error || ''}`, 'err');
+      if (json.status === 403) {
+        log(`  → 403: Communication User'ın SAP_COM_0A48 arrangement yetkisi var mı?`, 'warn');
+        log(`  → Kullanıcı tipi "Communication User (system)" olmalı`, 'warn');
+      }
+    }
+  } catch (e) {
+    $(`${sys}-dot`).className = 'dot dot-err';
+    $(`${sys}-status`).textContent = `Hata: ${e.message}`;
+    log(`[${sys.toUpperCase()}] Bağlantı hatası: ${e.message}`, 'err');
+  }
+}
+
+/* ── FETCH ALL ── */
+async function fetchAll() {
+  const url  = v('src', 'url');
+  const user = v('src', 'user');
+  const pass = $('src-pass').value;
+  if (!url || !user || !pass) { alert('Kaynak sistem bilgilerini eksiksiz giriniz.'); return; }
+
+  $('btn-fetch').disabled = true;
+  $('btn-fetch').innerHTML = '<span class="spinner"></span> Yükleniyor…';
+  log('──── Kaynak sistemden veriler çekiliyor ────', 'info');
+
+  const p = encodeURIComponent;
+
+  try {
+    const [cuResp, csResp, caResp] = await Promise.all([
+      fetch(`/api/comm-users?url=${p(url)}&user=${p(user)}&pass=${p(pass)}`),
+      fetch(`/api/comm-systems?url=${p(url)}&user=${p(user)}&pass=${p(pass)}`),
+      fetch(`/api/comm-arrangements?url=${p(url)}&user=${p(user)}&pass=${p(pass)}`),
+    ]);
+
+    const cuJson = await cuResp.json();
+    const csJson = await csResp.json();
+    const caJson = await caResp.json();
+
+    if (!cuResp.ok) throw new Error(`CU: ${cuJson.error || cuResp.status}`);
+    if (!csResp.ok) throw new Error(`CS: ${csJson.error || csResp.status}`);
+    if (!caResp.ok) throw new Error(`CA: ${caJson.error || caResp.status}`);
+
+    state.users        = cuJson.value || [];
+    state.systems      = csJson.value || [];
+    state.arrangements = caJson.value || [];
+
+    $('cu-count').textContent = state.users.length;
+    $('cs-count').textContent = state.systems.length;
+    $('ca-count').textContent = state.arrangements.length;
+
+    renderUsers(); renderSystems(); renderArrangements();
+
+    log(`Communication Users: ${state.users.length} kayıt`, 'ok');
+    log(`Communication Systems: ${state.systems.length} kayıt`, 'ok');
+    log(`Communication Arrangements: ${state.arrangements.length} kayıt`, 'ok');
+    log('Tüm veriler başarıyla yüklendi.', 'ok');
+  } catch (e) {
+    log(`Veri çekme hatası: ${e.message}`, 'err');
+  } finally {
+    $('btn-fetch').disabled = false;
+    $('btn-fetch').innerHTML = 'Kaynak Sistemden Verileri Çek';
+  }
+}
+
+/* ── RENDER ── */
+function renderUsersData(data) {
+  const tbody = $('tbody-cu');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Kayıt bulunamadı.</td></tr>'; return; }
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td><input type="checkbox" class="check cu-chk" ${state.selectedCU.has(u.ID) ? 'checked' : ''} onchange="toggleSel('cu','${esc(u.ID)}',this.checked)"/></td>
+      <td><strong>${esc(u.ID)}</strong></td>
+      <td>${esc(u.Name)}</td>
+      <td>${esc(u.Description)}</td>
+      <td style="text-align:center;">${u.LockStatus && u.LockStatus !== 'not_locked'
+        ? '<svg title="'+esc(u.LockStatus)+'" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="2" fill="#bb0000"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="#bb0000" stroke-width="1.5" fill="none"/><circle cx="8" cy="11" r="1.2" fill="#fff"/></svg>'
+        : '<svg title="not_locked" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="2" fill="#107e3e"/><path d="M5 7V5a3 3 0 0 1 6 0" stroke="#107e3e" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="8" cy="11" r="1.2" fill="#fff"/></svg>'
+      }</td>
+    </tr>`).join('');
+}
+function renderUsers() { renderUsersData(state.users); }
+
+function renderSystemsData(data) {
+  const tbody = $('tbody-cs');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Kayıt bulunamadı.</td></tr>'; return; }
+  tbody.innerHTML = data.map(s => `
+    <tr>
+      <td><input type="checkbox" class="check cs-chk" ${state.selectedCS.has(s.UUID) ? 'checked' : ''} onchange="toggleSel('cs','${esc(s.UUID)}',this.checked)"/></td>
+      <td><strong>${esc(s.ID)}</strong></td>
+      <td>${esc(s.Name)}</td>
+      <td>${esc(s.HostName)}</td>
+      <td>${esc(s.TCPPort)}</td>
+    </tr>`).join('');
+}
+function renderSystems() { renderSystemsData(state.systems); }
+
+function renderArrangementsData(data) {
+  const tbody = $('tbody-ca');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Kayıt bulunamadı.</td></tr>'; return; }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td><input type="checkbox" class="check ca-chk" ${state.selectedCA.has(a.UUID) ? 'checked' : ''} onchange="toggleSel('ca','${esc(a.UUID)}',this.checked)"/></td>
+      <td><strong>${esc(a.Name)}</strong></td>
+      <td>${esc(a.CommunicationScenarioID)}</td>
+      <td>${esc(a.CommunicationSystemID)}</td>
+    </tr>`).join('');
+}
+function renderArrangements() { renderArrangementsData(state.arrangements); }
+
+/* ── SELECTION ── */
+function toggleSel(type, id, checked) {
+  const set = type === 'cu' ? state.selectedCU : type === 'cs' ? state.selectedCS : state.selectedCA;
+  checked ? set.add(id) : set.delete(id);
+  updateSummary();
+}
+
+function selectAll(type, checked) {
+  const keys = { cu: 'ID', cs: 'UUID', ca: 'UUID' };
+  const srcs = { cu: state.users, cs: state.systems, ca: state.arrangements };
+  const sets = { cu: state.selectedCU, cs: state.selectedCS, ca: state.selectedCA };
+  sets[type].clear();
+  srcs[type].forEach(i => { if (checked) sets[type].add(i[keys[type]]); });
+  document.querySelectorAll(`.${type}-chk`).forEach(c => c.checked = checked);
+  updateSummary();
+}
+
+/* ── MIGRATION ── */
+async function startMigration() {
+  const total = state.selectedCU.size + state.selectedCS.size + state.selectedCA.size;
+  if (total === 0) { alert('Lütfen en az bir nesne seçiniz.'); return; }
+
+  const url  = v('tgt', 'url');
+  const user = v('tgt', 'user');
+  const pass = $('tgt-pass').value;
+  if (!url || !user || !pass) { alert('Hedef sistem bilgilerini eksiksiz giriniz.'); return; }
+
+  $('btn-migrate').disabled = true;
+  $('sum-ok').textContent = '0';
+  $('sum-err').textContent = '0';
+  setProgress(0);
+
+  let done = 0, ok = 0, err = 0;
+  const tick = () => { done++; setProgress(Math.round(done / total * 100)); $('sum-ok').textContent = ok; $('sum-err').textContent = err; };
+
+  /* Kaynak InboundUser UUID → Hedef InboundUser UUID mapping */
+  const inboundUserUUIDMap  = {};
+  /* Kaynak OutboundUser UUID → Hedef OutboundUser UUID mapping */
+  const outboundUserUUIDMap = {};
+
+  log('──── Migrasyon başlıyor ────', 'info');
+
+  /* 1. Communication Users — key field: ID */
+  for (const cuId of state.selectedCU) {
+    const cu = state.users.find(u => u.ID === cuId);
+    if (!cu) continue;
+    try {
+      const r = await apiPost('/api/comm-users/create', url, user, pass, {
+        ID:          cu.ID,
+        Name:        cu.Name        || cu.ID,
+        Type:        cu.Type        || 'B',
+        Description: cu.Description || '',
+      });
+      if (!r.ok) throw new Error(`${r.error || ''} | ${r.detail || ''}`);
+      if (r.skipped) { log(`[CU] Atlandı (zaten mevcut): ${cu.ID}`, 'warn'); ok++; }
+      else { log(`[CU] Oluşturuldu: ${cu.ID}`, 'ok'); ok++; }
+    } catch (e) {
+      log(`[CU] HATA (${cu.ID}): ${e.message}`, 'err'); err++;
+    }
+    tick();
+  }
+
+  /* 2. Communication Systems — kaynak UUID ile bulunur, hedefte yeni UUID üretilir */
+  const srcUrl2  = v('src', 'url');
+  const srcUser2 = v('src', 'user');
+  const srcPass2 = $('src-pass').value;
+
+  for (const csUUID of state.selectedCS) {
+    const cs = state.systems.find(s => s.UUID === csUUID);
+    if (!cs) continue;
+    try {
+      const r = await apiPost('/api/comm-systems/create', url, user, pass, cs);
+      if (!r.ok) throw new Error(`${r.error || ''} | ${r.detail || ''}`);
+      if (r.skipped) {
+        log(`[CS] Atlandı (zaten mevcut): ${cs.ID}`, 'warn'); ok++;
+      } else {
+        log(`[CS] Oluşturuldu: ${cs.ID}`, 'ok'); ok++;
+        const newUUID = r.data?.UUID;
+        if (newUUID) {
+          for (const iu of (cs.InboundUsers || [])) {
+            const cuId = iu.CommunicationUserID;
+            if (!cuId) continue;
+
+            log(`  [CS] InboundUser işleniyor: ${cuId}`, 'info');
+            const resolved = await resolveUserForCS(srcUrl2, srcUser2, srcPass2, url, user, pass, cuId);
+
+            if (!resolved.ok) {
+              log(`  [CS] InboundUser eşleştirilemedi (${cuId}): ${resolved.error || ''}`, 'err');
+              continue;
+            }
+            if (resolved.created) log(`  [CS] InboundUser hedefte oluşturuldu ve eşleştirildi: kaynak=${cuId} → hedef=${resolved.user.ID} (Name: ${resolved.user.Name})`, 'ok');
+            else log(`  [CS] InboundUser eşleştirildi: kaynak=${cuId} → hedef=${resolved.user.ID} (Name: ${resolved.user.Name})`, 'ok');
+
+            const resolvedPayload = { ...iu, CommunicationUserID: resolved.user.ID };
+            const ir = await apiPost('/api/comm-systems/inbound-user', url, user, pass, null, { systemUUID: newUUID, payload: resolvedPayload });
+            if (ir.ok) {
+              log(`  [CS] InboundUser CS'e eklendi: ${cuId}`, 'ok');
+              const newIUUID = ir.data?.UUID;
+              if (newIUUID && iu.UUID) inboundUserUUIDMap[iu.UUID] = newIUUID;
+            } else {
+              log(`  [CS] InboundUser CS'e eklenemedi (${cuId}): ${ir.error || ir.detail || ''}`, 'err');
+            }
+          }
+          for (const ou of (cs.OutboundUsers || [])) {
+            const ouName = ou.Name || '';
+            const ouAuth = ou.AuthenticationMethod || 'basic';
+
+            if (!ouName && ouAuth === 'none') {
+              log(`  [CS] OutboundUser AuthMethod=none, Name boş — olduğu gibi kopyalanıyor`, 'info');
+            } else if (ouName) {
+              log(`  [CS] OutboundUser işleniyor: Name=${ouName}`, 'info');
+            } else {
+              log(`  [CS] OutboundUser Name boş — atlanıyor`, 'warn');
+              continue;
+            }
+
+            const resolvedPayload = {
+              Name:                             ouName,
+              AuthenticationMethod:             ouAuth,
+              OAuth2ClientID:                   ou.OAuth2ClientID                   || '',
+              OAuth2ClientAuthenticationMethod: ou.OAuth2ClientAuthenticationMethod || '',
+              Password:                         ou.Password                         || '',
+            };
+
+            const or2 = await apiPost('/api/comm-systems/outbound-user', url, user, pass, null, { systemUUID: newUUID, payload: resolvedPayload });
+            if (or2.ok) {
+              log(`  [CS] OutboundUser CS'e eklendi: Name=${ouName}`, 'ok');
+              const newOUUID = or2.data?.UUID;
+              if (newOUUID && ou.UUID) outboundUserUUIDMap[ou.UUID] = newOUUID;
+            } else {
+              log(`  [CS] OutboundUser CS'e eklenemedi (Name=${ouName}): ${or2.error || or2.detail || ''}`, 'err');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      log(`[CS] HATA (${cs.ID}): ${e.message}`, 'err'); err++;
+    }
+    tick();
+  }
+
+  /* 3. Communication Arrangements */
+  for (const caUUID of state.selectedCA) {
+    const ca = state.arrangements.find(a => a.UUID === caUUID);
+    if (!ca) continue;
+    try {
+      /* 3a — Kaynak CA'daki CommunicationSystemID'yi hedef sistemde çözümle */
+      let tgtSystemID = ca.CommunicationSystemID || '';
+      let tgtSystemUUID = '';
+      if (tgtSystemID) {
+        const csRes = await resolveCSID(srcUrl2, srcUser2, srcPass2, url, user, pass, tgtSystemID);
+        if (csRes.ok) {
+          log(`  [CA] CS eşleştirildi: kaynak=${tgtSystemID} → hedef=${csRes.systemID}`, 'ok');
+          tgtSystemID   = csRes.systemID;
+          tgtSystemUUID = csRes.system?.UUID || '';
+        } else {
+          log(`  [CA] CS eşleştirilemedi (${tgtSystemID}): ${csRes.error || ''} — boş bırakılıyor`, 'warn');
+          tgtSystemID = '';
+        }
+      }
+
+      /* 3b — Hedef CS'in InboundUsers/OutboundUsers listesini çek */
+      let tgtCSUsers = { ok: false, inboundUsers: [], outboundUsers: [] };
+      if (tgtSystemID) {
+        tgtCSUsers = await resolveCSUsers(url, user, pass, tgtSystemID);
+        if (!tgtCSUsers.ok) log(`  [CA] Hedef CS user listesi alınamadı: ${tgtCSUsers.error || ''}`, 'warn');
+      }
+
+      const srcCS = state.systems.find(s => s.ID === ca.CommunicationSystemID);
+
+      /* 3c — Kaynak InboundUser UUID → kaynak CS'ten CommunicationUserID → Name bazlı hedef user bul → hedef CS'teki UUID al */
+      let tgtInboundUserUUID = '';
+      const srcInboundUserUUID = ca.InboundUser?.CommunicationSystemInboundUserUUID || '';
+      const isNullIUUID = !srcInboundUserUUID || srcInboundUserUUID === '00000000-0000-0000-0000-000000000000';
+      if (!isNullIUUID && tgtCSUsers.ok) {
+        const srcIUEntry = srcCS?.InboundUsers?.find(u => u.UUID === srcInboundUserUUID);
+        const srcCUID    = srcIUEntry?.CommunicationUserID || '';
+        if (srcCUID) {
+          const iuRes = await resolveUserForCS(srcUrl2, srcUser2, srcPass2, url, user, pass, srcCUID);
+          if (iuRes.ok) {
+            let tgtIUEntry = tgtCSUsers.inboundUsers.find(u => u.CommunicationUserID === iuRes.user.ID);
+            if (!tgtIUEntry && tgtSystemUUID) {
+              log(`  [CA] Hedef CS'te InboundUser yok (${iuRes.user.ID}) — CS'e ekleniyor`, 'info');
+              const addPayload = {
+                CommunicationUserID:  iuRes.user.ID,
+                AuthenticationMethod: srcIUEntry.AuthenticationMethod || 'basic',
+                OAuth2GrantType:      srcIUEntry.OAuth2GrantType      || '',
+                IsOAuth2RefreshTokenAllowed:   srcIUEntry.IsOAuth2RefreshTokenAllowed   ?? false,
+                OAuth2RefreshTokenExpiryValue: srcIUEntry.OAuth2RefreshTokenExpiryValue ?? 0,
+                OAuth2RefreshTokenExpiryUnit:  srcIUEntry.OAuth2RefreshTokenExpiryUnit  || '',
+                OAuth2ClientID:       srcIUEntry.OAuth2ClientID       || '',
+              };
+              const addRes = await apiPost('/api/comm-systems/inbound-user', url, user, pass, null, { systemUUID: tgtSystemUUID, payload: addPayload });
+              if (addRes.ok) {
+                log(`  [CA] InboundUser CS'e eklendi: ${iuRes.user.ID}`, 'ok');
+                const refreshed = await resolveCSUsers(url, user, pass, tgtSystemID);
+                if (refreshed.ok) {
+                  tgtCSUsers = refreshed;
+                  tgtIUEntry = refreshed.inboundUsers.find(u => u.CommunicationUserID === iuRes.user.ID);
+                }
+              } else {
+                log(`  [CA] InboundUser CS'e eklenemedi: ${addRes.error || addRes.detail || ''}`, 'err');
+              }
+            }
+            if (tgtIUEntry?.UUID) {
+              tgtInboundUserUUID = tgtIUEntry.UUID;
+              log(`  [CA] InboundUser eşleştirildi: kaynak=${srcCUID} → hedef=${iuRes.user.ID} → CS UUID=${tgtInboundUserUUID}`, 'ok');
+            } else {
+              log(`  [CA] Hedef CS'te InboundUser kaydı bulunamadı: ${iuRes.user.ID}`, 'warn');
+            }
+          } else {
+            log(`  [CA] InboundUser eşleştirilemedi (${srcCUID}): ${iuRes.error || ''}`, 'warn');
+          }
+        } else {
+          log(`  [CA] InboundUser UUID (${srcInboundUserUUID}) kaynak CS'te bulunamadı`, 'warn');
+        }
+      }
+
+      /* 3d — Kaynak OutboundUser UUID → Name bazlı hedef CS eşleştirme; eksikse CS'e ekle */
+      let tgtOutboundUserUUID = '';
+      const srcOutboundUserUUID = ca.OutboundUser?.CommunicationSystemOutboundUserUUID || '';
+      const isNullOUUID = !srcOutboundUserUUID || srcOutboundUserUUID === '00000000-0000-0000-0000-000000000000';
+      if (!isNullOUUID && tgtCSUsers.ok) {
+        const srcOUEntry = srcCS?.OutboundUsers?.find(u => u.UUID === srcOutboundUserUUID);
+        const srcOUName  = srcOUEntry?.Name || '';
+        if (srcOUName) {
+          let tgtOUEntry = tgtCSUsers.outboundUsers.find(u => u.Name === srcOUName);
+          if (!tgtOUEntry && tgtSystemUUID) {
+            log(`  [CA] Hedef CS'te OutboundUser yok (Name=${srcOUName}) — CS'e ekleniyor`, 'info');
+            const addPayload = {
+              Name:                             srcOUName,
+              AuthenticationMethod:             srcOUEntry.AuthenticationMethod             || 'basic',
+              OAuth2ClientID:                   srcOUEntry.OAuth2ClientID                   || '',
+              OAuth2ClientAuthenticationMethod: srcOUEntry.OAuth2ClientAuthenticationMethod || '',
+              Password:                         srcOUEntry.Password                         || '',
+            };
+            const addRes = await apiPost('/api/comm-systems/outbound-user', url, user, pass, null, { systemUUID: tgtSystemUUID, payload: addPayload });
+            if (addRes.ok) {
+              log(`  [CA] OutboundUser CS'e eklendi: Name=${srcOUName}`, 'ok');
+              const refreshed = await resolveCSUsers(url, user, pass, tgtSystemID);
+              if (refreshed.ok) {
+                tgtCSUsers = refreshed;
+                tgtOUEntry = refreshed.outboundUsers.find(u => u.Name === srcOUName);
+              }
+            } else {
+              log(`  [CA] OutboundUser CS'e eklenemedi: ${addRes.error || addRes.detail || ''}`, 'err');
+            }
+          }
+          if (tgtOUEntry?.UUID) {
+            tgtOutboundUserUUID = tgtOUEntry.UUID;
+            log(`  [CA] OutboundUser eşleştirildi: Name=${srcOUName} → CS UUID=${tgtOutboundUserUUID}`, 'ok');
+          } else {
+            log(`  [CA] Hedef CS'te OutboundUser bulunamadı: Name=${srcOUName}`, 'warn');
+          }
+        } else {
+          log(`  [CA] OutboundUser UUID (${srcOutboundUserUUID}) kaynak CS'te bulunamadı veya Name boş`, 'warn');
+        }
+      }
+
+      /* 3e — CA'yı oluştur (ScenarioID + SystemID + Name + user UUID'leri) */
+      /* Kaynak CA'yı klonla, sadece sistem/user UUID'lerini hedef sisteme göre güncelle */
+      const caCreatePayload = {
+        ...ca,
+        CommunicationSystemID: tgtSystemID || ca.CommunicationSystemID,
+      };
+
+      if (ca.InboundUser) {
+        caCreatePayload.InboundUser = {
+          ...ca.InboundUser,
+          CommunicationSystemInboundUserUUID: tgtInboundUserUUID || ca.InboundUser.CommunicationSystemInboundUserUUID,
+        };
+      }
+      if (ca.OutboundUser) {
+        caCreatePayload.OutboundUser = {
+          ...ca.OutboundUser,
+          CommunicationSystemOutboundUserUUID: tgtOutboundUserUUID || ca.OutboundUser.CommunicationSystemOutboundUserUUID,
+        };
+      }
+
+      log(`  [CA] Create payload: ScenarioID=${caCreatePayload.CommunicationScenarioID} SystemID=${tgtSystemID || '-'} IU=${tgtInboundUserUUID || '-'} OU=${tgtOutboundUserUUID || '-'} OutboundSvc=${(ca.OutboundServices || []).length}`, 'info');
+
+      const r = await apiPost('/api/comm-arrangements/create', url, user, pass, caCreatePayload);
+      if (!r.ok) throw new Error(`${r.error || ''} | ${r.detail || ''}`);
+      if (r.skipped) {
+        log(`[CA] Atlandı (zaten mevcut): ${ca.Name}`, 'warn'); ok++;
+      } else {
+        log(`[CA] Oluşturuldu: ${ca.Name}`, 'ok'); ok++;
+      }
+    } catch (e) {
+      log(`[CA] HATA (${ca.Name}): ${e.message}`, 'err'); err++;
+    }
+    tick();
+  }
+
+  log(`──── Tamamlandı: ${ok} başarılı / ${err} hatalı ────`, err === 0 ? 'ok' : 'warn');
+  $('btn-migrate').disabled = false;
+}
+
+async function apiPost(endpoint, url, user, pass, payload, extra = {}) {
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, user, pass, payload, ...extra }),
+  });
+  return resp.json();
+}
+
+async function resolveUserForCS(srcUrl, srcUser, srcPass, tgtUrl, tgtUser, tgtPass, communicationUserID) {
+  const resp = await fetch('/api/comm-users/resolve-for-cs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ srcUrl, srcUser, srcPass, tgtUrl, tgtUser, tgtPass, communicationUserID }),
+  });
+  return resp.json();
+}
+
+async function resolveCSID(srcUrl, srcUser, srcPass, tgtUrl, tgtUser, tgtPass, communicationSystemID) {
+  const resp = await fetch('/api/comm-systems/resolve-id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ srcUrl, srcUser, srcPass, tgtUrl, tgtUser, tgtPass, communicationSystemID }),
+  });
+  return resp.json();
+}
+
+async function resolveCSUsers(tgtUrl, tgtUser, tgtPass, systemID) {
+  const p = encodeURIComponent;
+  const resp = await fetch(`/api/comm-systems/users?url=${p(tgtUrl)}&user=${p(tgtUser)}&pass=${p(tgtPass)}&id=${p(systemID)}`);
+  return resp.json();
+}
+
+/* ── INFO MODAL ── */
+function openInfoModal()  { $('info-modal').classList.add('open'); }
+function closeInfoModal() { $('info-modal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfoModal(); });
+
+/* ── CONFIG LOAD ── */
+(async () => {
+  try {
+    const cfg = await fetch('/api/config').then(r => r.json());
+    if (cfg.source?.url)  $('src-url').value  = cfg.source.url;
+    if (cfg.source?.user) $('src-user').value = cfg.source.user;
+    if (cfg.source?.pass) $('src-pass').value = cfg.source.pass;
+    if (cfg.target?.url)  $('tgt-url').value  = cfg.target.url;
+    if (cfg.target?.user) $('tgt-user').value = cfg.target.user;
+    if (cfg.target?.pass) $('tgt-pass').value = cfg.target.pass;
+  } catch {}
+})();
+</script>
+</body>
+</html>

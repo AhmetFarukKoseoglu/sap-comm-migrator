@@ -519,9 +519,14 @@ async function fetchAll() {
       fetch(`/api/comm-arrangements?url=${p(url)}&user=${p(user)}&pass=${p(pass)}`),
     ]);
 
-    const cuJson = await cuResp.json();
-    const csJson = await csResp.json();
-    const caJson = await caResp.json();
+    const cuText = await cuResp.text();
+    const csText = await csResp.text();
+    const caText = await caResp.text();
+
+    const safeParse = (text, label) => { try { return JSON.parse(text); } catch { throw new Error(`${label}: Sunucu geçersiz yanıt döndürdü — ${text.slice(0, 200)}`); } };
+    const cuJson = safeParse(cuText, 'CU');
+    const csJson = safeParse(csText, 'CS');
+    const caJson = safeParse(caText, 'CA');
 
     if (!cuResp.ok) throw new Error(`CU: ${cuJson.error || cuResp.status}`);
     if (!csResp.ok) throw new Error(`CS: ${csJson.error || csResp.status}`);
